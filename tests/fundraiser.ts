@@ -34,6 +34,7 @@ describe("fundraiser", () => {
     return signature;
   };
 
+  // This should be before
   it("Test Preparation", async() => {
     const airdrop = await provider.connection.requestAirdrop(maker.publicKey, 1 * anchor.web3.LAMPORTS_PER_SOL).then(confirm);
     console.log("\nAirdropped 1 SOL to maker", airdrop);
@@ -126,6 +127,7 @@ describe("fundraiser", () => {
     console.log("Contributor balance", contributorAccount.amount.toString());
   });
 
+  // this fails because after this contributor amount would be more than 10% of amount to raise
   it("Contribute to Fundraiser - Robustness Test", async () => {
     try {
       const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
@@ -154,6 +156,7 @@ describe("fundraiser", () => {
     }
   });
 
+  // fundraising duration not passed
   it("Check contributions - Robustness Test", async () => {
     try {
       const vault = getAssociatedTokenAddressSync(mint, fundraiser, true);
@@ -182,7 +185,7 @@ describe("fundraiser", () => {
       console.log(error.msg);
     }
   });
-  
+
   // A refund is only legal once the window has closed, so a seven day fundraiser
   // must refuse one on the day it opens. The successful refund is covered in
   // tests/time-window-bankrun.ts, which can move the clock past the deadline.

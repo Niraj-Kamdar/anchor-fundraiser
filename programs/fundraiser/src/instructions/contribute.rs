@@ -1,20 +1,10 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{
-    Mint, 
-    transfer, 
-    Token, 
-    TokenAccount, 
-    Transfer
-};
+use anchor_spl::token::{transfer, Mint, Token, TokenAccount, Transfer};
 
 use crate::{
-    state::{
-        Contributor, 
-        Fundraiser
-    }, FundraiserError, 
-    ANCHOR_DISCRIMINATOR, 
-    MAX_CONTRIBUTION_PERCENTAGE, 
-    PERCENTAGE_SCALER, SECONDS_TO_DAYS
+    state::{Contributor, Fundraiser},
+    FundraiserError, ANCHOR_DISCRIMINATOR, MAX_CONTRIBUTION_PERCENTAGE, PERCENTAGE_SCALER,
+    SECONDS_TO_DAYS,
 };
 
 #[derive(Accounts)]
@@ -55,7 +45,6 @@ pub struct Contribute<'info> {
 
 impl<'info> Contribute<'info> {
     pub fn contribute(&mut self, amount: u64) -> Result<()> {
-
         // Check that the contribution is at least one whole token.
         //
         // The previous form was `1_u8.pow(decimals)`, and 1 raised to any power is 1
@@ -67,8 +56,12 @@ impl<'info> Contribute<'info> {
         require!(amount >= one_token, FundraiserError::ContributionTooSmall);
 
         // Check if the amount to contribute is less than the maximum allowed contribution
+        // LOW: This check doesn't provide sybil resistance.
+        // This can be a major centralisation risk if the contribition goves governance rights and be high severity bug
         require!(
-            amount <= (self.fundraiser.amount_to_raise * MAX_CONTRIBUTION_PERCENTAGE) / PERCENTAGE_SCALER, 
+            amount
+                <= (self.fundraiser.amount_to_raise * MAX_CONTRIBUTION_PERCENTAGE)
+                    / PERCENTAGE_SCALER,
             FundraiserError::ContributionTooBig
         );
 
@@ -81,9 +74,15 @@ impl<'info> Contribute<'info> {
         );
 
         // Check if the maximum contributions per contributor have been reached
+        // The following condition and ContributionTooBig can be collapsed into one
+        // INFO: if current + new <= max => new <= max and current <= max, hence 3 separate conditions are wasted CU
         require!(
-            (self.contributor_account.amount <= (self.fundraiser.amount_to_raise * MAX_CONTRIBUTION_PERCENTAGE) / PERCENTAGE_SCALER)
-                && (self.contributor_account.amount + amount <= (self.fundraiser.amount_to_raise * MAX_CONTRIBUTION_PERCENTAGE) / PERCENTAGE_SCALER),
+            (self.contributor_account.amount
+                <= (self.fundraiser.amount_to_raise * MAX_CONTRIBUTION_PERCENTAGE)
+                    / PERCENTAGE_SCALER)
+                && (self.contributor_account.amount + amount
+                    <= (self.fundraiser.amount_to_raise * MAX_CONTRIBUTION_PERCENTAGE)
+                        / PERCENTAGE_SCALER),
             FundraiserError::MaximumContributionsReached
         );
 
@@ -102,6 +101,9 @@ impl<'info> Contribute<'info> {
         transfer(cpi_ctx, amount)?;
 
         // Update the fundraiser and contributor accounts with the new amounts
+        // INFO: this is a bottleneck since multiple contributions would need to be processed sequentially
+        // Alternate read the balance of vault directly, prone to donation attack.
+        // There is similar bottleneck in minting and burning same tokens since they have to track supply
         self.fundraiser.current_amount += amount;
 
         self.contributor_account.amount += amount;
