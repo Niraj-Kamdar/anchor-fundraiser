@@ -12,7 +12,11 @@ pub struct Refund<'info> {
     pub contributor: Signer<'info>,
     pub maker: SystemAccount<'info>,
     pub mint_to_raise: Account<'info, Mint>,
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"receipt", maker.key().as_ref()],
+        bump = fundraiser.receipt_bump
+    )]
     pub receipt_mint: Account<'info, Mint>,
     #[account(
         mut,
@@ -94,9 +98,9 @@ impl<'info> Refund<'info> {
         let cpi_accounts = Burn {
             mint: self.receipt_mint.to_account_info(),
             from: self.contributor_receipt_ata.to_account_info(),
-            authority: self.fundraiser.to_account_info(),
+            authority: self.contributor.to_account_info(),
         };
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program.clone(), cpi_accounts, &signer_seeds);
+        let cpi_ctx = CpiContext::new(cpi_program, cpi_accounts);
 
         let one_token = 10u64
             .checked_pow(self.mint_to_raise.decimals as u32)

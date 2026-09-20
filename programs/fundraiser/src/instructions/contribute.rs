@@ -5,7 +5,7 @@ use anchor_spl::{
 };
 
 use crate::{
-    state::{fundraiser, Contributor, Fundraiser},
+    state::{Contributor, Fundraiser},
     FundraiserError, ANCHOR_DISCRIMINATOR, MAX_CONTRIBUTION_PERCENTAGE, PERCENTAGE_SCALER,
     SECONDS_TO_DAYS,
 };
@@ -17,10 +17,10 @@ pub struct Contribute<'info> {
     pub mint_to_raise: Account<'info, Mint>,
     #[account(
         mut,
-        seeds = [b"fundraiser".as_ref(), fundraiser.maker.as_ref()],
-        bump = fundraiser.bump,
+        seeds = [b"receipt".as_ref(), fundraiser.maker.as_ref()],
+        bump = fundraiser.receipt_bump,
     )]
-    pub receipt_mint: Account<'info, Mint>,
+    pub receipt_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
         has_one = mint_to_raise,
@@ -48,7 +48,7 @@ pub struct Contribute<'info> {
         associated_token::mint = receipt_mint,
         associated_token::authority = contributor
     )]
-    pub contributor_receipt_ata: Account<'info, TokenAccount>,
+    pub contributor_receipt_ata: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::mint = fundraiser.mint_to_raise,
