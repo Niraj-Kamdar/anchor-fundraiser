@@ -17,7 +17,7 @@ pub struct Refund<'info> {
         seeds = [b"receipt", maker.key().as_ref()],
         bump = fundraiser.receipt_bump
     )]
-    pub receipt_mint: Account<'info, Mint>,
+    pub receipt_mint: Box<Account<'info, Mint>>,
     #[account(
         mut,
         has_one = mint_to_raise,
@@ -44,7 +44,7 @@ pub struct Refund<'info> {
         associated_token::mint = receipt_mint,
         associated_token::authority = contributor
     )]
-    pub contributor_receipt_ata: Account<'info, TokenAccount>,
+    pub contributor_receipt_ata: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         associated_token::mint = mint_to_raise,
