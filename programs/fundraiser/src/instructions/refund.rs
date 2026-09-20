@@ -21,6 +21,7 @@ pub struct Refund<'info> {
     #[account(
         mut,
         has_one = mint_to_raise,
+        has_one = receipt_mint,
         seeds = [b"fundraiser", maker.key().as_ref()],
         bump = fundraiser.bump,
     )]
