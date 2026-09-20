@@ -14,6 +14,15 @@ pub struct Initialize<'info> {
     #[account(
         init,
         payer = maker,
+        seeds = [b"receipt", maker.key().as_ref()],
+        bump,
+        mint::decimals = 9,
+        mint::authority = fundraiser,
+    )]
+    pub receipt_mint: Account<'info, Mint>,
+    #[account(
+        init,
+        payer = maker,
         seeds = [b"fundraiser", maker.key().as_ref()],
         bump,
         space = ANCHOR_DISCRIMINATOR + Fundraiser::INIT_SPACE,
@@ -56,6 +65,8 @@ impl<'info> Initialize<'info> {
             time_started: Clock::get()?.unix_timestamp,
             duration,
             bump: bumps.fundraiser,
+            receipt_mint: self.receipt_mint.key(),
+            receipt_bump: bumps.receipt_mint,
         });
 
         Ok(())

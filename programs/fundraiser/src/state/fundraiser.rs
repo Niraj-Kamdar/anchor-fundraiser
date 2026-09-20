@@ -10,4 +10,7 @@ pub struct Fundraiser {
     pub time_started: i64,
     pub duration: u8, // $explore
     pub bump: u8,
+    pub receipt_mint: Pubkey,
+    pub receipt_bump: u8,
 }
+// $explore On pinocchio appending mint may cause memory alignment issue and require more space due to reprC
